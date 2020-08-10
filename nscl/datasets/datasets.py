@@ -8,6 +8,15 @@
 # This file is part of NSCL-PyTorch.
 # Distributed under terms of the MIT license.
 
+
+"""qian: this datasets.py inherits common.filterable.py's base dataset class definition.
+    and implements the above functionality specific to NSCL.
+
+    here, we dive deep into the data itself. i need to know something about data.
+    now, i am more interested in understanding his entire architecture,
+    thus i first checkout what he's doing on the high level,
+    thus only understanding the outputs of the data-processing functions is OKay. """
+
 import os.path as osp
 
 import nltk
@@ -21,7 +30,8 @@ from jacinle.utils.container import GView
 from nscl.datasets.definition import gdef
 from nscl.datasets.common.filterable import FilterableDatasetUnwrapped, FilterableDatasetView
 from nscl.datasets.common.vocab import Vocab
-from nscl.datasets.common.program_translator import nsclseq_to_nscltree, nsclseq_to_nsclqsseq, nscltree_to_nsclqstree, gen_vocab
+from nscl.datasets.common.program_translator import nsclseq_to_nscltree, nsclseq_to_nsclqsseq, nscltree_to_nsclqstree, \
+    gen_vocab
 
 logger = get_logger(__file__)
 
@@ -29,9 +39,49 @@ __all__ = ['NSCLDataset', 'ConceptRetrievalDataset', 'ConceptQuantizationDataset
 
 
 class NSCLDatasetUnwrapped(FilterableDatasetUnwrapped):
-    def __init__(self, scenes_json, questions_json, image_root, image_transform, vocab_json, question_transform=None, incl_scene=True):
+    """pass"""
+    """qian: filterableDataset is like a small relational-database, 
+        here, we instantiate this form to clevr dataset and NSCL task. """
+    def __init__(self, scenes_json, questions_json, image_root, image_transform, vocab_json, question_transform=None,
+                 incl_scene=True):
+        """pass"""
+        """This initialization assigns file paths and reads data. 
+            The read data variables are 'question', 'scenes', 'vocab'. 
+            I record the data format here: 
+                'vocab': idx2word, word2idx. 
+                'questions':  
+                    a list of question, 
+                        'image_index', 
+                        'question_index', 
+                        'image_filename', 
+                        'question_family_index', 
+                        'split', 
+                        'answer', 
+                        'question': natural language question.
+                'scenes': 
+                    a list of scene, 
+                        'image_index', 
+                        'objects':
+                            'color', 
+                            'size', 
+                            'rotation', 
+                            'shape', 
+                            '3d_coords', 
+                            'material', 
+                            'pixel_coords'
+                        'relationships': i have not understood the semantics yet,  
+                            'right', 
+                            'behind', 
+                            'front', 
+                            'left', 
+                        'image_filename', 
+                        'split', 
+                        'directions': i have not understood the semantics yet, 
+                        'object_detection'.
+                        """
         super().__init__()
 
+        """qian: record some data file paths."""
         self.scenes_json = scenes_json
         self.questions_json = questions_json
         self.image_root = image_root
@@ -41,6 +91,7 @@ class NSCLDatasetUnwrapped(FilterableDatasetUnwrapped):
 
         self.incl_scene = incl_scene
 
+        """qian: load data."""
         logger.info('Loading scenes from: "{}".'.format(self.scenes_json))
         self.scenes = io.load_json(self.scenes_json)['scenes']
         if isinstance(self.questions_json, (tuple, list)):
@@ -60,8 +111,17 @@ class NSCLDatasetUnwrapped(FilterableDatasetUnwrapped):
             self.vocab = gen_vocab(self)
 
     def _get_metainfo(self, index):
-        question = gdef.translate_question(self.questions[index])
-        scene = gdef.translate_scene(self.scenes[question['image_index']])
+        """"""
+        """qian: here, gdef is set to be NSCLDefinition class.
+            Here, dataset's variables are set by Definition's methods. 
+            Thus is the inter-play of two classes.
+            
+            This _get_metainfo retrieves the index-th data entry. 
+            Put everything in 'question' variable and return it."""
+
+        """qian: perception and question section, these are usual common data."""
+        question = gdef.translate_question(self.questions[index])  # qian: here, actually do nothing.
+        scene = gdef.translate_scene(self.scenes[question['image_index']])  # qian: here, actually do nothing.
         question['scene'] = scene
 
         question['image_index'] = question['image_index']
@@ -77,11 +137,17 @@ class NSCLDatasetUnwrapped(FilterableDatasetUnwrapped):
             has_program = True
         elif 'program' in question:
             question['program_raw'] = question['program']
+            # qian: note the 2nd argument is useless
             question['program_seq'] = gdef.program_to_nsclseq(question['program'], question)
             has_program = True
 
+        """These program variations are cool. Let us check it out."""
         if has_program:
+            # qian: program_tree converts list to tree.
+            #   i mean, the input's reference is embedded in each operation.
             question['program_tree'] = nsclseq_to_nscltree(question['program_seq'])
+            # qs- means with additional NSCL information.
+            #   concept indices and values are attached.
             question['program_qsseq'] = nsclseq_to_nsclqsseq(question['program_seq'])
             question['program_qstree'] = nscltree_to_nsclqstree(question['program_tree'])
             question['question_type'] = question['program_seq'][-1]['op']
@@ -203,6 +269,9 @@ class NSCLDatsetFilterableView(FilterableDatasetView):
 
 
 def NSCLDataset(*args, **kwargs):
+    """this creates dataset for neural symbolic concept learner.
+        the inner part should be its dataset instance, and the outer
+        part should be a dataset wrapper. """
     return NSCLDatsetFilterableView(NSCLDatasetUnwrapped(*args, **kwargs))
 
 
@@ -390,4 +459,3 @@ class ConceptQuantizationDatasetFilterableView(FilterableDatasetView):
 
 def ConceptQuantizationDataset(*args, **kwargs):
     return ConceptQuantizationDatasetFilterableView(ConceptQuantizationDatasetUnwrapped(*args, **kwargs))
-

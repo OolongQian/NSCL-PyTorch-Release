@@ -8,6 +8,12 @@
 # This file is part of NSCL-PyTorch.
 # Distributed under terms of the MIT license.
 
+"""qian: this class defines the form of DatasetDefinition, as well as its wrapper as the utility.
+    its main content is the class DatasetDefinitionBase.
+    I should read it through carefully."""
+
+"""qian: read nscl.datasets.clevr.definition.py after finishing this."""
+
 from jacinle.utils.cache import cached_property
 from nscl.datasets.common.scene_annotation import annotate_objects
 
@@ -15,8 +21,12 @@ __all__ = ['DatasetDefinitionBase', 'get_global_definition', 'set_global_definit
 
 
 class DatasetDefinitionBase(object):
+    """This DatasetDefinition defines symbolic 'structure' over NSCL dataset."""
+    # qian: symbol types.
     parameter_types = ['concept', 'relational_concept', 'attribute']
+    # qian: intermediate results.
     variable_types = ['object', 'object_set']
+    # qian: values returned back to query.
     return_types = ['word', 'integer', 'bool']
 
     extra_embeddings = list()
@@ -45,6 +55,8 @@ class DatasetDefinitionBase(object):
             atype2qtypes.setdefault(k, []).append(v)
         return atype2qtypes
 
+    """qian: attribute_concepts is a dict(), 
+        One attribute can take on values of multiple concepts."""
     attribute_concepts = dict()
 
     @cached_property
@@ -59,6 +71,7 @@ class DatasetDefinitionBase(object):
 
     @cached_property
     def all_relational_concepts(self):
+        """qian: what is this fuck?"""
         return {v for vs in self.relational_concepts.values() for v in vs}
 
     @cached_property
@@ -78,6 +91,8 @@ class DatasetDefinitionBase(object):
             v: k for k, vs in self.relational_concepts.items() for v in vs
         })
         return concept2attribute
+
+    """qian: the following functions are templates for child classes."""
 
     def translate_scene(self, scene):
         return scene
@@ -110,6 +125,16 @@ class DatasetDefinitionBase(object):
         raise NotImplementedError()
 
 
+"""qian: this is an interesting operation. 
+    it seems that we can call and set some attribute from 
+    anywhere within the project.
+    
+    this module is used like this: 
+        the gdef (global definition) is set to be Dataset/NSCLDefinition class, 
+        so that the definition becomes a globally shared object. and its functions 
+        are invoked as usual, for example, gdef.translate_question."""
+
+
 class GlobalDefinitionWrapper(object):
     def __getattr__(self, item):
         return getattr(get_global_definition(), item)
@@ -119,7 +144,6 @@ class GlobalDefinitionWrapper(object):
 
 
 gdef = GlobalDefinitionWrapper()
-
 
 _GLOBAL_DEF = None
 

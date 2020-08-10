@@ -8,9 +8,8 @@
 # This file is part of NSCL-PyTorch.
 # Distributed under terms of the MIT license.
 
-"""
-Basic concepts in the CLEVR dataset.
-"""
+"""This module instantiate DatasetDefinition's symbolic structure
+    form to clevr dataset."""
 
 import six
 import numpy as np
@@ -21,6 +20,9 @@ from .program_translator import clevr_to_nsclseq
 
 logger = get_logger(__file__)
 
+"""qian: from XXX import * only imports objects specified in '__all__', if is defined in XXX.
+    don't be afraid of these strange stuff!"""
+
 __all__ = [
     'CLEVRDefinition',
     'build_clevr_dataset', 'build_symbolic_clevr_dataset',
@@ -29,8 +31,16 @@ __all__ = [
 
 
 class CLEVRDefinition(DatasetDefinitionBase):
+    """pass"""
+
+    """the following operation_signatures, attribute_concepts, relational_concepts, synonyms, 
+        override parent form class, and are instantiations for clevr dataset."""
+
+    """qian: operation_signatures mean all operations the program can do.
+        these signatures declares the input and output forms of information. 
+        and these symbolic forms are logical and is the key to NSCL."""
     operation_signatures = [
-        # Part 1: CLEVR dataset.
+        # Part 1: clevr dataset.
         ('scene', [], [], 'object_set'),
         ('filter', ['concept'], ['object_set'], 'object_set'),
         ('relate', ['relational_concept'], ['object'], 'object_set'),
@@ -47,17 +57,19 @@ class CLEVRDefinition(DatasetDefinitionBase):
         ('count_greater', [], ['object_set', 'object_set'], 'bool'),
     ]
 
+    """qian: declare possible concepts values for each attribute."""
     attribute_concepts = {
         'color': ['gray', 'red', 'blue', 'green', 'brown', 'purple', 'cyan', 'yellow'],
         'material': ['rubber', 'metal'],
         'shape': ['cube', 'sphere', 'cylinder'],
         'size': ['small', 'large']
     }
-
+    """qian: similar to above."""
     relational_concepts = {
         'spatial_relation': ['left', 'right', 'front', 'behind']
     }
 
+    """qian: do some extra for NLP question processing."""
     synonyms = {
         "thing": ["thing", "object"],
         "sphere": ["sphere", "ball", "spheres", "balls"],
@@ -85,6 +97,9 @@ class CLEVRDefinition(DatasetDefinitionBase):
         if 'mask' in scene['objects'][0]:
             return True
         return False
+
+    """qian: the following methods could be understood when inspecting where they are invoked. 
+        thus i jump to read others."""
 
     def annotate_scene(self, scene):
         feed_dict = dict()
@@ -154,7 +169,11 @@ class CLEVRDefinition(DatasetDefinitionBase):
         collate_guide['program_parserv1_candidates_qstree'] = 'skip'
 
 
+"""qian: i should read nscl.dataset first."""
+
+
 def build_clevr_dataset(args, configs, image_root, scenes_json, questions_json):
+    """qian: here we build clevr dataset for Neural-Symbolic Concept Learner."""
     import jactorch.transforms.bbox as T
     image_transform = T.Compose([
         T.NormalizeBbox(),
@@ -216,4 +235,3 @@ def build_symbolic_clevr_dataset(args):
     )
 
     return dataset
-

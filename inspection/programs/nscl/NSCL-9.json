@@ -1,0 +1,1 @@
+[{"op": "scene", "inputs": []}, {"op": "filter", "concept": ["brown", "metal", "sphere"], "inputs": [0]}, {"op": "relate_attribute_equal", "attribute": "size", "inputs": [1]}, {"op": "exist", "inputs": [2]}]

@@ -416,7 +416,7 @@ class DifferentiableReasoning(nn.Module):
                 elif op == 'union':
                     buffer.append(ctx.union(*inputs))
                 else:
-                    assert block_id == len(prog) - 1, 'Unexpected query operation: {}. Are you using the CLEVR-convension?'.format(op)
+                    assert block_id == len(prog) - 1, 'Unexpected query operation: {}. Are you using the clevr-convension?'.format(op)
                     if op == 'query':
                         buffer.append(ctx.query(*inputs, block['attribute_idx'], block['attribute_values']))
                     elif op == 'query_ls':

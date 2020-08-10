@@ -19,7 +19,7 @@ __all__ = ['clevr_to_nsclseq']
 
 def get_clevr_pblock_op(block):
     """
-    Return the operation of a CLEVR program block.
+    Return the operation of a clevr program block.
     """
     if 'type' in block:
         return block['type']
@@ -31,7 +31,18 @@ def get_clevr_op_attribute(op):
     return op.split('_')[1]
 
 
+"""qian: utility used to dump programs."""
+DUMP_PROGRAM_CNT = 0
+
+
 def clevr_to_nsclseq(clevr_program):
+    """pass"""
+    global DUMP_PROGRAM_CNT
+    """qian: This function is particularly interesting. 
+        It translates clevr program to NSCL program. 
+        The symbolic format of these two programs, i mean, 
+            the subtle difference in these two languages are the key to neural-symbolic."""
+
     nscl_program = list()
     mapping = dict()
 
@@ -77,7 +88,7 @@ def clevr_to_nsclseq(clevr_program):
             elif op == 'greater_than':
                 current = dict(op='count_greater')
             else:
-                raise ValueError('Unknown CLEVR operation: {}.'.format(op))
+                raise ValueError('Unknown clevr operation: {}.'.format(op))
 
         if current is None:
             assert len(block['inputs']) == 1
@@ -91,5 +102,16 @@ def clevr_to_nsclseq(clevr_program):
             nscl_program.append(current)
             mapping[block_id] = len(nscl_program) - 1
 
-    return nscl_program
+    """qian: dump several clevr and NSCL programs as examples."""
+    DUMP_PROGRAMS_TO_INSPECT = False
+    if DUMP_PROGRAMS_TO_INSPECT:
+        DUMP_PROGRAM_CNT += 1
+        if DUMP_PROGRAM_CNT == 10:
+            exit(0)
+        import json
+        with open("./inspection/programs/clevr-{}.json".format(DUMP_PROGRAM_CNT), 'w') as f:
+            json.dump(clevr_program, f)
+        with open("./inspection/programs/NSCL-{}.json".format(DUMP_PROGRAM_CNT), 'w') as f:
+            json.dump(nscl_program, f)
 
+    return nscl_program

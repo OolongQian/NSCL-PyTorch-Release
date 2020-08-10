@@ -1,0 +1,1 @@
+[{"op": "scene", "inputs": []}, {"op": "filter", "concept": ["brown", "metal", "sphere"], "inputs": [0]}, {"op": "query", "attribute": "size", "inputs": [1]}]

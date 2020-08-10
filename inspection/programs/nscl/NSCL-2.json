@@ -1,0 +1,30 @@
+[
+  {
+    "op": "scene",
+    "inputs": []
+  },
+  {
+    "op": "filter",
+    "concept": [
+      "small",
+      "cyan",
+      "rubber"
+    ],
+    "inputs": [
+      0
+    ]
+  },
+  {
+    "op": "relate_attribute_equal",
+    "attribute": "shape",
+    "inputs": [
+      1
+    ]
+  },
+  {
+    "op": "count",
+    "inputs": [
+      2
+    ]
+  }
+]

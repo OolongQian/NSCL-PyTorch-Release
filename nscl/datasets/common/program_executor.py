@@ -9,7 +9,7 @@
 # Distributed under terms of the MIT license.
 
 """
-Program executor on the CLEVR dataset.
+Program executor on the clevr dataset.
 """
 
 import six

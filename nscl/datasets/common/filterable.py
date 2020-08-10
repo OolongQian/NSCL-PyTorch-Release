@@ -19,6 +19,11 @@ class FilterableDatasetUnwrapped(Dataset):
     """
     A filterable dataset. User can call various `filter_*` operations to obtain a subset of the dataset.
     """
+
+    """qian: in this kind of neural-symbolic project architecture, the dataset should be made as 
+        a relational database.
+        Unwrapped means this is a class needs to be further inherited."""
+
     def __init__(self):
         super().__init__()
         self.metainfo_cache = dict()
@@ -69,25 +74,42 @@ class FilterableDatasetView(FilterableDatasetUnwrapped):
         return self._filter_func
 
     def collect(self, key_func):
+        """pass"""
+        """qian: i do not understand what it is for, and it seems never be used."""
         return {key_func(self.get_metainfo(i)) for i in range(len(self))}
 
     def filter(self, filter_func, filter_name=None):
+        """pass"""
+        """qian: filter the original dataset via some filter, 
+            collect the filtered data-points, 
+            then return the recreated subset."""
         indices = []
+        # qian: len(self) should be current dataset size.
         for i in range(len(self)):
+            # qian: get_metainfo could be the information
+            #   of the i_th data instance.
             metainfo = self.get_metainfo(i)
             if filter_func(metainfo):
+                # qian: if this data instance satisfies the filter function,
+                #   append to the filtered new sub-dataset.
                 indices.append(i)
         if len(indices) == 0:
             raise ValueError('Filter results in an empty dataset.')
+        """qian: type(self) is FilterableDatasetView, 
+            thus is creating a new subset.
+            but where is the self.owner_dataset."""
         return type(self)(self, indices, filter_name, filter_func)
 
     def random_trim_length(self, length):
+        """"""
+        """qian: randomly sample a subset of length 'length'."""
         assert length < len(self)
         logger.info('Randomly trim the dataset: #samples = {}.'.format(length))
         indices = list(random.choice(len(self), size=length, replace=False))
         return type(self)(self, indices=indices, filter_name='randomtrim[{}]'.format(length))
 
     def trim_length(self, length):
+        """"""
         assert length < len(self)
         logger.info('Trim the dataset: #samples = {}.'.format(length))
         return type(self)(self, indices=list(range(0, length)), filter_name='trim[{}]'.format(length))
@@ -98,21 +120,31 @@ class FilterableDatasetView(FilterableDatasetUnwrapped):
         nr_val = len(self) - nr_train
         logger.info('Split the dataset: #training samples = {}, #validation samples = {}.'.format(nr_train, nr_val))
         return (
-                type(self)(self, indices=list(range(0, split)), filter_name='train'),
-                type(self)(self, indices=list(range(split, len(self))), filter_name='val')
+            type(self)(self, indices=list(range(0, split)), filter_name='train'),
+            type(self)(self, indices=list(range(split, len(self))), filter_name='val')
         )
 
     def split_kfold(self, k):
+        """"""
+        """k-fold validation. 
+            return a generator that yields k train-valid datasets.
+            it can be called for k times."""
         assert len(self) % k == 0
         block = len(self) // k
 
         for i in range(k):
             yield (
-                    type(self)(self, indices=list(range(0, i * block)) + list(range((i + 1) * block, len(self))), filter_name='fold{}[train]'.format(i + 1)),
-                    type(self)(self, indices=list(range(i * block, (i + 1) * block)), filter_name='fold{}[val]'.format(i + 1))
+                type(self)(self, indices=list(range(0, i * block)) + list(range((i + 1) * block, len(self))),
+                           filter_name='fold{}[train]'.format(i + 1)),
+                type(self)(self, indices=list(range(i * block, (i + 1) * block)),
+                           filter_name='fold{}[val]'.format(i + 1))
             )
 
     def __getitem__(self, index):
+        """"""
+        """get an instance from the dataset.
+            if the dataset is not full, i.e. a subset, 
+            the index goes through self.indices[index]."""
         if self.indices is None:
             return self.owner_dataset[index]
         return self.owner_dataset[self.indices[index]]
@@ -126,4 +158,3 @@ class FilterableDatasetView(FilterableDatasetUnwrapped):
         if self.indices is None:
             return self.owner_dataset.get_metainfo(index)
         return self.owner_dataset.get_metainfo(self.indices[index])
-

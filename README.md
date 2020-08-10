@@ -95,6 +95,7 @@ a semantic parser is pre-trained using program annotations. In the full NS-CL, t
 To train the model:
 ```
 jac-crun <gpu_id> scripts/trainval.py --desc experiments/clevr/desc_nscl_derender.py --training-target derender --curriculum all --dataset clevr --data-dir <data_dir>/clevr/train --batch-size 32 --epoch 100 --validation-interval 5 --save-interval 5 --data-split 0.95
+my command: jac-run scripts/trainval.py --desc experiments/clevr/desc_nscl_derender.py --training-target derender --curriculum all --dataset clevr --data-dir ./clevr/train --batch-size 32 --epoch 100 --validation-interval 5 --save-interval 5 --data-split 0.95
 ```
 The `--data-split 0.95` specifies that five percent of the training data will be held out as the develop set. Since the annotation for the test split is not available for the CLEVR dataset, we will test our model on the original validation split.
 A sample training log is provided at [this URL](http://nscl.csail.mit.edu/data/code-data/clevr/log/run-2019-04-07-16-25-45.log). A pretrained model is available at [this URL](http://nscl.csail.mit.edu/data/code-data/clevr/model/derender-curriculum_all-qtrans_off-clevrfull-epoch_100.pth).

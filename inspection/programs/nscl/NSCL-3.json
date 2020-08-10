@@ -1,0 +1,39 @@
+[
+  {
+    "op": "scene",
+    "inputs": []
+  },
+  {
+    "op": "filter",
+    "concept": [
+      "large",
+      "sphere"
+    ],
+    "inputs": [
+      0
+    ]
+  },
+  {
+    "op": "scene",
+    "inputs": []
+  },
+  {
+    "op": "filter",
+    "concept": [
+      "large",
+      "rubber",
+      "cube"
+    ],
+    "inputs": [
+      2
+    ]
+  },
+  {
+    "op": "query_attribute_equal",
+    "attribute": "color",
+    "inputs": [
+      1,
+      3
+    ]
+  }
+]

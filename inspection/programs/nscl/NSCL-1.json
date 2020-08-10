@@ -1,0 +1,39 @@
+[
+  {
+    "op": "scene",
+    "inputs": []
+  },
+  {
+    "op": "filter",
+    "concept": [
+      "large",
+      "green"
+    ],
+    "inputs": [
+      0
+    ]
+  },
+  {
+    "op": "scene",
+    "inputs": []
+  },
+  {
+    "op": "filter",
+    "concept": [
+      "large",
+      "purple",
+      "metal",
+      "cube"
+    ],
+    "inputs": [
+      2
+    ]
+  },
+  {
+    "op": "count_greater",
+    "inputs": [
+      1,
+      3
+    ]
+  }
+]

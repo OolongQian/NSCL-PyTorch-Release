@@ -42,7 +42,9 @@ parser.add_argument('--expr', default=None, metavar='DIR', help='experiment name
 parser.add_argument('--training-target', required=True, choices=['derender', 'parser', 'all'])
 parser.add_argument('--training-visual-modules', default='all', choices=['none', 'object', 'relation', 'all'])
 parser.add_argument('--curriculum', default='all', choices=['off', 'scene', 'program', 'all'])
-parser.add_argument('--question-transform', default='off', choices=['off', 'basic', 'parserv1-groundtruth', 'parserv1-candidates', 'parserv1-candidates-executed'])
+parser.add_argument('--question-transform', default='off',
+                    choices=['off', 'basic', 'parserv1-groundtruth', 'parserv1-candidates',
+                             'parserv1-candidates-executed'])
 parser.add_argument('--concept-quantization-json', default=None, metavar='FILE')
 
 # running mode
@@ -51,40 +53,50 @@ parser.add_argument('--evaluate', action='store_true', help='run the validation 
 
 # training hyperparameters
 parser.add_argument('--epochs', type=int, default=10, metavar='N', help='number of total epochs to run')
-parser.add_argument('--enums-per-epoch', type=int, default=1, metavar='N', help='number of enumerations of the whole dataset per epoch')
+parser.add_argument('--enums-per-epoch', type=int, default=1, metavar='N',
+                    help='number of enumerations of the whole dataset per epoch')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N', help='batch size')
 parser.add_argument('--lr', type=float, default=0.001, metavar='N', help='initial learning rate')
-parser.add_argument('--iters-per-epoch', type=int, default=0, metavar='N', help='number of iterations per epoch 0=one pass of the dataset (default: 0)')
+parser.add_argument('--iters-per-epoch', type=int, default=0, metavar='N',
+                    help='number of iterations per epoch 0=one pass of the dataset (default: 0)')
 parser.add_argument('--acc-grad', type=int, default=1, metavar='N', help='accumulated gradient (default: 1)')
 parser.add_argument('--clip-grad', type=float, metavar='F', help='gradient clipping')
-parser.add_argument('--validation-interval', type=int, default=1, metavar='N', help='validation inverval (epochs) (default: 1)')
+parser.add_argument('--validation-interval', type=int, default=1, metavar='N',
+                    help='validation inverval (epochs) (default: 1)')
 
 # finetuning and snapshot
-parser.add_argument('--load', type='checked_file', default=None, metavar='FILE', help='load the weights from a pretrained model (default: none)')
-parser.add_argument('--resume', type='checked_file', default=None, metavar='FILE', help='path to latest checkpoint (default: none)')
+parser.add_argument('--load', type='checked_file', default=None, metavar='FILE',
+                    help='load the weights from a pretrained model (default: none)')
+parser.add_argument('--resume', type='checked_file', default=None, metavar='FILE',
+                    help='path to latest checkpoint (default: none)')
 parser.add_argument('--start-epoch', type=int, default=0, metavar='N', help='manual epoch number')
-parser.add_argument('--save-interval', type=int, default=2, metavar='N', help='model save interval (epochs) (default: 10)')
+parser.add_argument('--save-interval', type=int, default=2, metavar='N',
+                    help='model save interval (epochs) (default: 10)')
 
 # data related
 parser.add_argument('--dataset', required=True, choices=get_available_datasets(), help='dataset')
 parser.add_argument('--data-dir', required=True, type='checked_dir', metavar='DIR', help='data directory')
 parser.add_argument('--data-trim', type=float, default=0, metavar='F', help='trim the dataset')
-parser.add_argument('--data-split',type=float, default=0.75, metavar='F', help='fraction / numer of training samples')
+parser.add_argument('--data-split', type=float, default=0.75, metavar='F', help='fraction / numer of training samples')
 parser.add_argument('--data-vocab-json', type='checked_file', metavar='FILE')
 parser.add_argument('--data-scenes-json', type='checked_file', metavar='FILE')
 parser.add_argument('--data-questions-json', type='checked_file', metavar='FILE', nargs='+')
 
 parser.add_argument('--extra-data-dir', type='checked_dir', metavar='DIR', help='extra data directory for validation')
-parser.add_argument('--extra-data-scenes-json', type='checked_file', nargs='+', default=None, metavar='FILE', help='extra scene json file for validation')
-parser.add_argument('--extra-data-questions-json', type='checked_file', nargs='+', default=None, metavar='FILE', help='extra question json file for validation')
+parser.add_argument('--extra-data-scenes-json', type='checked_file', nargs='+', default=None, metavar='FILE',
+                    help='extra scene json file for validation')
+parser.add_argument('--extra-data-questions-json', type='checked_file', nargs='+', default=None, metavar='FILE',
+                    help='extra question json file for validation')
 
-parser.add_argument('--data-workers', type=int, default=4, metavar='N', help='the num of workers that input training data')
+parser.add_argument('--data-workers', type=int, default=4, metavar='N',
+                    help='the num of workers that input training data')
 
 # misc
-parser.add_argument('--use-gpu', type='bool', default=True, metavar='B', help='use GPU or not')
+parser.add_argument('--use-gpu', type='bool', default=False, metavar='B', help='use GPU or not')
 parser.add_argument('--use-tb', type='bool', default=False, metavar='B', help='use tensorboard or not')
 parser.add_argument('--embed', action='store_true', help='entering embed after initialization')
-parser.add_argument('--force-gpu', action='store_true', help='force the script to use GPUs, useful when there exists on-the-ground devices')
+parser.add_argument('--force-gpu', action='store_true',
+                    help='force the script to use GPUs, useful when there exists on-the-ground devices')
 
 args = parser.parse_args()
 
@@ -125,12 +137,14 @@ args.configs.apply(configs)
 
 
 def main():
+    """pass"""
+    "qian: output result directory."
     args.dump_dir = ensure_path(osp.join(
         'dumps', args.series_name, args.desc_name, (
-            args.training_target +
-            ('-curriculum_' + args.curriculum) +
-            ('-qtrans_' + args.question_transform if args.question_transform is not None else '') +
-            ('-' + args.expr if args.expr is not None else '')
+                args.training_target +
+                ('-curriculum_' + args.curriculum) +
+                ('-qtrans_' + args.question_transform if args.question_transform is not None else '') +
+                ('-' + args.expr if args.expr is not None else '')
         )
     ))
 
@@ -153,12 +167,18 @@ def main():
             args.tb_dir_root = ensure_path(osp.join(args.dump_dir, 'tensorboard'))
             args.tb_dir = ensure_path(osp.join(args.tb_dir_root, args.run_name))
 
+    """qian: a mysterious utility function.
+        I become familiar with the dataset and definition classes, 
+            now i need to sort out how these things are initialized and constructed, 
+            i mean the logic and function-call trace during the construction."""
     initialize_dataset(args.dataset)
     build_dataset = get_dataset_builder(args.dataset)
 
     dataset = build_dataset(args, configs, args.data_image_root, args.data_scenes_json, args.data_questions_json)
 
+    "qian: we just trim the dataset for debugging."
     dataset_trim = int(len(dataset) * args.data_trim) if args.data_trim <= 1 else int(args.data_trim)
+
     if dataset_trim > 0:
         dataset = dataset.trim_length(dataset_trim)
 
@@ -167,7 +187,8 @@ def main():
 
     extra_dataset = None
     if args.extra_data_dir is not None:
-        extra_dataset = build_dataset(args, configs, args.extra_data_image_root, args.extra_data_scenes_json, args.extra_data_questions_json)
+        extra_dataset = build_dataset(args, configs, args.extra_data_image_root, args.extra_data_scenes_json,
+                                      args.extra_data_questions_json)
 
     main_train(train_dataset, validation_dataset, extra_dataset)
 
@@ -197,7 +218,8 @@ def main_train(train_dataset, validation_dataset, extra_dataset=None):
     if args.acc_grad > 1:
         from jactorch.optim import AccumGrad
         optimizer = AccumGrad(optimizer, args.acc_grad)
-        logger.warning('Use accumulated grad={:d}, effective iterations per epoch={:d}.'.format(args.acc_grad, int(args.iters_per_epoch / args.acc_grad)))
+        logger.warning('Use accumulated grad={:d}, effective iterations per epoch={:d}.'.format(args.acc_grad, int(
+            args.iters_per_epoch / args.acc_grad)))
 
     trainer = TrainerEnv(model, optimizer)
 
@@ -224,21 +246,26 @@ def main_train(train_dataset, validation_dataset, extra_dataset=None):
 
     if args.clip_grad:
         logger.info('Registering the clip_grad hook: {}.'.format(args.clip_grad))
+
         def clip_grad(self, loss):
             from torch.nn.utils import clip_grad_norm_
             clip_grad_norm_(self.model.parameters(), max_norm=args.clip_grad)
+
         trainer.register_event('backward:after', clip_grad)
 
     if hasattr(desc, 'customize_trainer'):
         desc.customize_trainer(trainer)
 
     if args.embed:
-        from IPython import embed; embed()
+        from IPython import embed;
+        embed()
 
     logger.critical('Building the data loader.')
-    validation_dataloader = validation_dataset.make_dataloader(args.batch_size, shuffle=False, drop_last=False, nr_workers=args.data_workers)
+    validation_dataloader = validation_dataset.make_dataloader(args.batch_size, shuffle=False, drop_last=False,
+                                                               nr_workers=args.data_workers)
     if extra_dataset is not None:
-        extra_dataloader = extra_dataset.make_dataloader(args.batch_size, shuffle=False, drop_last=False, nr_workers=args.data_workers)
+        extra_dataloader = extra_dataset.make_dataloader(args.batch_size, shuffle=False, drop_last=False,
+                                                         nr_workers=args.data_workers)
 
     if args.evaluate:
         meters.reset()
@@ -246,7 +273,8 @@ def main_train(train_dataset, validation_dataset, extra_dataset=None):
         validate_epoch(0, trainer, validation_dataloader, meters)
         if extra_dataset is not None:
             validate_epoch(0, trainer, extra_dataloader, meters, meter_prefix='validation_extra')
-        logger.critical(meters.format_simple('Validation', {k: v for k, v in meters.avg.items() if v != 0}, compressed=False))
+        logger.critical(
+            meters.format_simple('Validation', {k: v for k, v in meters.avg.items() if v != 0}, compressed=False))
         return meters
 
     # assert args.curriculum == 'off', 'Unimplemented feature: curriculum mode {}.'.format(args.curriculum)
@@ -281,10 +309,12 @@ def main_train(train_dataset, validation_dataset, extra_dataset=None):
                         this_train_dataset = this_train_dataset.filter_scene_size(max_scene_size)
                     if args.curriculum in ('program', 'all'):
                         this_train_dataset = this_train_dataset.filter_program_size_raw(max_program_size)
-                    logger.critical('Building the data loader. Curriculum = {}/{}, length = {}.'.format(*s[1:], len(this_train_dataset)))
+                    logger.critical('Building the data loader. Curriculum = {}/{}, length = {}.'.format(*s[1:], len(
+                        this_train_dataset)))
                     break
 
-        train_dataloader = this_train_dataset.make_dataloader(args.batch_size, shuffle=True, drop_last=True, nr_workers=args.data_workers)
+        train_dataloader = this_train_dataset.make_dataloader(args.batch_size, shuffle=True, drop_last=True,
+                                                              nr_workers=args.data_workers)
 
         for enum_id in range(args.enums_per_epoch):
             train_epoch(epoch, trainer, train_dataloader, meters)
@@ -298,7 +328,8 @@ def main_train(train_dataset, validation_dataset, extra_dataset=None):
 
         logger.critical(meters.format_simple(
             'Epoch = {}'.format(epoch),
-            {k: v for k, v in meters.avg.items() if epoch % args.validation_interval == 0 or not k.startswith('validation')},
+            {k: v for k, v in meters.avg.items() if
+             epoch % args.validation_interval == 0 or not k.startswith('validation')},
             compressed=False
         ))
 
@@ -317,7 +348,8 @@ def backward_check_nan(self, feed_dict, loss, monitors, output_dict):
             continue
         if torch.isnan(param.grad.data).any().item():
             print('Caught NAN in gradient.', name)
-            from IPython import embed; embed()
+            from IPython import embed;
+            embed()
 
 
 def train_epoch(epoch, trainer, train_dataloader, meters):
@@ -339,10 +371,12 @@ def train_epoch(epoch, trainer, train_dataloader, meters):
                 if not args.gpu_parallel:
                     feed_dict = async_copy_to(feed_dict, 0)
 
-            data_time = time.time() - end; end = time.time()
+            data_time = time.time() - end;
+            end = time.time()
 
             loss, monitors, output_dict, extra_info = trainer.step(feed_dict, cast_tensor=False)
-            step_time = time.time() - end; end = time.time()
+            step_time = time.time() - end;
+            end = time.time()
 
             n = feed_dict['image'].size(0)
             meters.update(loss=loss, n=n)
@@ -354,7 +388,8 @@ def train_epoch(epoch, trainer, train_dataloader, meters):
 
             pbar.set_description(meters.format_simple(
                 'Epoch {}'.format(epoch),
-                {k: v for k, v in meters.val.items() if not k.startswith('validation') and k != 'epoch' and k.count('/') <= 1},
+                {k: v for k, v in meters.val.items() if
+                 not k.startswith('validation') and k != 'epoch' and k.count('/') <= 1},
                 compressed=True
             ))
             pbar.update()
@@ -372,11 +407,13 @@ def validate_epoch(epoch, trainer, val_dataloader, meters, meter_prefix='validat
                 if not args.gpu_parallel:
                     feed_dict = async_copy_to(feed_dict, 0)
 
-            data_time = time.time() - end; end = time.time()
+            data_time = time.time() - end;
+            end = time.time()
 
             output_dict, extra_info = trainer.evaluate(feed_dict, cast_tensor=False)
             monitors = {meter_prefix + '/' + k: v for k, v in as_float(output_dict['monitors']).items()}
-            step_time = time.time() - end; end = time.time()
+            step_time = time.time() - end;
+            end = time.time()
 
             n = feed_dict['image'].size(0)
             meters.update(monitors, n=n)
@@ -396,5 +433,5 @@ def validate_epoch(epoch, trainer, val_dataloader, meters, meter_prefix='validat
 
 
 if __name__ == '__main__':
+    """qian: this trainval.py may do everything altogether."""
     main()
-
