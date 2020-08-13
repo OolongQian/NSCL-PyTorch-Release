@@ -205,6 +205,10 @@ class NSCLDatasetUnwrapped(FilterableDatasetUnwrapped):
 
 
 class NSCLDatsetFilterableView(FilterableDatasetView):
+    """pass"""
+    """create filterable nscl dataset.
+        first three member functions are some filters defined for curriculum learning or something, 
+        and the last is making dataloader out of this dataset. """
     def filter_program_size_raw(self, max_length):
         def filt(question):
             return len(question['program']) <= max_length
@@ -232,6 +236,10 @@ class NSCLDatsetFilterableView(FilterableDatasetView):
             raise ValueError('Must provide either allowed={...} or disallowed={...}.')
 
     def make_dataloader(self, batch_size, shuffle, drop_last, nr_workers):
+        """pass"""
+        """This function creates dataloader out of our nscl dataset. 
+            The use of pytorch dataloader is helpful, and i should learn it in detail. 
+            I should learn python and pyTorch techniques via this opportunity."""
         from jactorch.data.dataloader import JacDataLoader
         from jactorch.data.collate import VarLengthCollateV2
 
@@ -259,6 +267,8 @@ class NSCLDatsetFilterableView(FilterableDatasetView):
             'answer': 'skip',
         }
 
+        """qian: collate_guide defines how the features are processed when 
+            encountering different situations."""
         gdef.update_collate_guide(collate_guide)
 
         return JacDataLoader(

@@ -18,6 +18,10 @@ to get the supervision for the VSE modules. This model tests the implementation 
 Note that, in order to train this model, one must use the curriculum learning.
 """
 
+"""qian: after building dataset, we dive into learning model. 
+    the model takes the role of, a reasoning agent, and a differentiable symbolic inference process.
+    hence, we look at it in both a philosophical and a technical point of views."""
+
 from jacinle.utils.container import GView
 from nscl.models.reasoning_v1 import make_reasoning_v1_configs, ReasoningV1Model
 from nscl.models.utils import canonize_monitors, update_from_loss_module
@@ -29,14 +33,26 @@ configs.train.qa_add_supervision = True
 
 
 class Model(ReasoningV1Model):
+    """pass"""
+    """qian: This model is specific for NSCL CLEVR curriculum experiment,  
+        and it inherits ReasoningV1Model. 
+        I would like to check out the base ReasoningV1Model first."""
     def __init__(self, vocab):
         super().__init__(vocab, configs)
 
     def forward(self, feed_dict):
+        # qian: GView seems a fancy custom version of python dict.
         feed_dict = GView(feed_dict)
         monitors, outputs = {}, {}
 
+        """qian: checkout the input and output shape and semantics of these intermediate 
+            results along the pipeline."""
+
+        # qian: feed_dict.image (32, 3, 256, 384)
+        # f_scene.shape (32, 256, 16, 24)
         f_scene = self.resnet(feed_dict.image)
+        # qian: feed_dict.objects (96, 4)
+        # feed_dict.objects_length (32)
         f_sng = self.scene_graph(f_scene, feed_dict.objects, feed_dict.objects_length)
 
         programs = feed_dict.program_qsseq

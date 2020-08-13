@@ -69,6 +69,15 @@ def generate_roi_pool_bins(box, bin_size, c2l=COOR_TO_LEN_CORR):
 
 
 def generate_intersection_map(box1, box2, bin_size, c2l=COOR_TO_LEN_CORR):
+    """qian: i assume this is about generating sub-sampled intersection map,
+        which means, taking the intersected part of box1 and box2,
+        and get a 0-1 bit map indicating the intersection of box1 and box2.
+        but we also need to sub-sample the spatial size of the bit map,
+        thus each cell of the bit map corresponds to a region, and the 0-1 value turns into a ratio.
+
+        recall Mask-RCNN.
+            in this situation, the region of interest is determined by input bounding box,
+            we use the bounding boxes to construct the ROI to crop the CNN aligned feature."""
     # box: nr_boxes, 4
     # bins: nr_boxes, bin_size^2, 4
     bins = generate_roi_pool_bins(box2, bin_size, c2l)

@@ -171,13 +171,22 @@ def main():
         I become familiar with the dataset and definition classes, 
             now i need to sort out how these things are initialized and constructed, 
             i mean the logic and function-call trace during the construction."""
+
+    """qian: initialize_dataset and get_dataset_builder are two strange functions, which 
+        fetches the class definition and dataset builder for our dataset. 
+        anyway, all we need to know is that, the related class and build_dataset function are 
+        set to gdef and returned as 'build_dataset'."""
     initialize_dataset(args.dataset)
     build_dataset = get_dataset_builder(args.dataset)
 
+    """qian: step into this and see which function it leads to: 
+        nscl.datasets.clevr.definition.py's build_clevr_dataset.
+        haven't built dataloader."""
     dataset = build_dataset(args, configs, args.data_image_root, args.data_scenes_json, args.data_questions_json)
 
     "qian: we just trim the dataset for debugging."
     dataset_trim = int(len(dataset) * args.data_trim) if args.data_trim <= 1 else int(args.data_trim)
+    dataset_trim = 100000
 
     if dataset_trim > 0:
         dataset = dataset.trim_length(dataset_trim)
@@ -190,11 +199,14 @@ def main():
         extra_dataset = build_dataset(args, configs, args.extra_data_image_root, args.extra_data_scenes_json,
                                       args.extra_data_questions_json)
 
+    """Ok, after building dataset and definition, we finally enter main_train procedure."""
     main_train(train_dataset, validation_dataset, extra_dataset)
 
 
 def main_train(train_dataset, validation_dataset, extra_dataset=None):
     logger.critical('Building the model.')
+    """qian: invoke make_model() function in experiments.clevr.desc_nscl_derender.py
+        Oh, i see. when completing model building, we take a step forward to build the model."""
     model = desc.make_model(args, train_dataset.unwrapped.vocab)
 
     if args.use_gpu:

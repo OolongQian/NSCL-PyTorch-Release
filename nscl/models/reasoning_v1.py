@@ -53,6 +53,21 @@ def make_reasoning_v1_configs():
 
 
 class ReasoningV1Model(nn.Module):
+    """qian: this class is the base class for our reasoning agent,
+        it creates several neural networks modules.
+        the actual usage, i.e. forward(self), is defined in the inherited model,
+            which, in this case, is the 'Model' class in expeirments.clevr.desc_nscl_derender.py.
+        before i dig into the details of the network modules here,
+        i'd better check out the child class's forward(self) function first.
+        i should always checkout the input, output, philosophical idea and the logical structure in the first place."""
+
+    """qian: this is a high level wrapper class for reasoning agent. 
+        it cumulates several major losses and neural network modules.
+        i am gonna check them out 1-by-1.
+        this model script is written in nscl.models folder, 
+        while the neural modules lie in nscl.nn folder. 
+        i gotta check the nn modules out in detail."""
+
     def __init__(self, vocab, configs):
         super().__init__()
         self.vocab = vocab
@@ -72,7 +87,8 @@ class ReasoningV1Model(nn.Module):
         )
 
         import nscl.nn.reasoning_v1.losses as vqa_losses
-        self.scene_loss = vqa_losses.SceneParsingLoss(gdef.all_concepts, add_supervision=configs.train.scene_add_supervision)
+        self.scene_loss = vqa_losses.SceneParsingLoss(gdef.all_concepts,
+                                                      add_supervision=configs.train.scene_add_supervision)
         self.qa_loss = vqa_losses.QALoss(add_supervision=configs.train.qa_add_supervision)
 
     def train(self, mode=True):

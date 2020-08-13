@@ -45,14 +45,17 @@ class SceneGraph(nn.Module):
             self.object_feature_fuse = nn.Conv2d(feature_dim * 2, output_dims[1], 1)
             self.relation_feature_fuse = nn.Conv2d(feature_dim // 2 * 3 + output_dims[1] * 2, output_dims[2], 1)
 
-            self.object_feature_fc = nn.Sequential(nn.ReLU(True), nn.Linear(output_dims[1] * self.pool_size ** 2, output_dims[1]))
-            self.relation_feature_fc = nn.Sequential(nn.ReLU(True), nn.Linear(output_dims[2] * self.pool_size ** 2, output_dims[2]))
+            self.object_feature_fc = nn.Sequential(nn.ReLU(True),
+                                                   nn.Linear(output_dims[1] * self.pool_size ** 2, output_dims[1]))
+            self.relation_feature_fc = nn.Sequential(nn.ReLU(True),
+                                                     nn.Linear(output_dims[2] * self.pool_size ** 2, output_dims[2]))
 
             self.reset_parameters()
         else:
             def gen_replicate(n):
                 def rep(x):
                     return torch.cat([x for _ in range(n)], dim=1)
+
                 return rep
 
             self.pool_size = 32
@@ -74,14 +77,17 @@ class SceneGraph(nn.Module):
                 m.bias.data.zero_()
 
     def forward(self, input, objects, objects_length):
-        object_features = input
-        context_features = self.context_feature_extract(input)
-        relation_features = self.relation_feature_extract(input)
+        """qian: to thoroughly understand the meanings of object_features, context_features, relation_features,
+            i mean, the semantic meaning, i'd better go back to the paper itself."""
+        object_features = input  # qian: (32, 256, 16, 24)
+        context_features = self.context_feature_extract(input)  # qian: (32, 256, 16, 24)
+        relation_features = self.relation_feature_extract(input)  # qian: (32, 384, 16, 24)
 
         outputs = list()
         objects_index = 0
         for i in range(input.size(0)):
-            box = objects[objects_index:objects_index + objects_length[i].item()]
+            """qian: iterate through every instance in the input batch."""
+            box = objects[objects_index:objects_index + objects_length[i].item()]  # qian: (3, 4) [3 objects, 4 for bb].
             objects_index += objects_length[i].item()
 
             with torch.no_grad():
@@ -94,22 +100,30 @@ class SceneGraph(nn.Module):
                     torch.zeros(box.size(0), 1, dtype=box.dtype, device=box.device),
                     image_w + torch.zeros(box.size(0), 1, dtype=box.dtype, device=box.device),
                     image_h + torch.zeros(box.size(0), 1, dtype=box.dtype, device=box.device)
-                ], dim=-1)
+                ], dim=-1)  # qian: this box contains the entire image.
 
                 # meshgrid to obtain the subject and object bounding boxes
-                sub_id, obj_id = jactorch.meshgrid(torch.arange(box.size(0), dtype=torch.int64, device=box.device), dim=0)
+                """qian: i don't perfectly understand the meaning of meshgrid, 
+                    but the idea is to obtain all the combinations of multiple bounding boxes (here is 2)."""
+                sub_id, obj_id = jactorch.meshgrid(torch.arange(box.size(0), dtype=torch.int64, device=box.device),
+                                                   dim=0)
                 sub_id, obj_id = sub_id.contiguous().view(-1), obj_id.contiguous().view(-1)
                 sub_box, obj_box = jactorch.meshgrid(box, dim=0)
                 sub_box = sub_box.contiguous().view(box.size(0) ** 2, 4)
                 obj_box = obj_box.contiguous().view(box.size(0) ** 2, 4)
 
                 # union box
+                """qian: union_box (9, 4), including all 9 possible bounding box pairs' union.
+                    The union means the set union operation."""
                 union_box = functional.generate_union_box(sub_box, obj_box)
                 rel_batch_ind = i + torch.zeros(union_box.size(0), 1, dtype=box.dtype, device=box.device)
 
                 # intersection maps
+                # qian: (3, 1, 7, 7). crop the object ROI.
                 box_context_imap = functional.generate_intersection_map(box, image_box, self.pool_size)
+                # qian: (9, 1, 7, 7). crop ordered object ROI in each pair.
                 sub_union_imap = functional.generate_intersection_map(sub_box, union_box, self.pool_size)
+                # qian: (9, 1, 7, 7). crop ordered object ROI in each pair.
                 obj_union_imap = functional.generate_intersection_map(obj_box, union_box, self.pool_size)
 
             this_context_features = self.context_roi_pool(context_features, torch.cat([batch_ind, image_box], dim=-1))
@@ -119,7 +133,8 @@ class SceneGraph(nn.Module):
                 x, y * box_context_imap
             ], dim=1))
 
-            this_relation_features = self.relation_roi_pool(relation_features, torch.cat([rel_batch_ind, union_box], dim=-1))
+            this_relation_features = self.relation_roi_pool(relation_features,
+                                                            torch.cat([rel_batch_ind, union_box], dim=-1))
             x, y, z = this_relation_features.chunk(3, dim=1)
             this_relation_features = self.relation_feature_fuse(torch.cat([
                 this_object_features[sub_id], this_object_features[obj_id],
@@ -136,11 +151,12 @@ class SceneGraph(nn.Module):
                 outputs.append([
                     None,
                     self._norm(self.object_feature_fc(this_object_features.view(box.size(0), -1))),
-                    self._norm(self.relation_feature_fc(this_relation_features.view(box.size(0) * box.size(0), -1)).view(box.size(0), box.size(0), -1))
+                    self._norm(
+                        self.relation_feature_fc(this_relation_features.view(box.size(0) * box.size(0), -1)).view(
+                            box.size(0), box.size(0), -1))
                 ])
 
         return outputs
 
     def _norm(self, x):
         return x / x.norm(2, dim=-1, keepdim=True)
-
