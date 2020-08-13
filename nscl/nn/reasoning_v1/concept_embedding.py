@@ -37,6 +37,12 @@ def set_query_assisted_same(value):
 
 class AttributeBlock(nn.Module):
     """Attribute as a neural operator."""
+    """Attribute is a category while concepts belong to one or more categories.
+        AttributeBlock is implemented as a linear layer.
+        Example:
+            identifier: 'color'.
+            input_dim, output_dim: 256, 64.
+        Here, the identifier is managed by ConceptEmbedding class."""
     def __init__(self, input_dim, output_dim):
         super().__init__()
         self.input_dim = input_dim
@@ -46,7 +52,11 @@ class AttributeBlock(nn.Module):
 
 class ConceptBlock(nn.Module):
     """
-    Concept as an embedding in the corresponding attribute space.
+    Concept is an embedding in the corresponding attribute space.
+    For example,
+        an concept is 'gray', and thus a conceptBlock is created to represent this concept in latent space.
+        The key 'gray' is managed by ConceptEmbedding class.
+        The exact feature value of 'gray' is left to torch.randn().
     """
     def __init__(self, embedding_dim, nr_attributes, attribute_agnostic=False):
         """
@@ -73,10 +83,12 @@ class ConceptBlock(nn.Module):
     def set_belong(self, belong_id):
         """
         Set the attribute that this concept belongs to.
+        qian: It may be because, 'belong' relates to the PyTorch control flow,
+            therefore it should be PyTorch Tensor.
+            And we set .requires_grad to False, to make it a static configuration kind of thing.
 
         Args:
             belong_id (int): the id of the attribute.
-
         """
         self.belong.data.fill_(-100)
         self.belong.data[belong_id] = 100
@@ -103,6 +115,8 @@ class ConceptBlock(nn.Module):
 
 
 class ConceptEmbedding(nn.Module):
+    """qian: Concept embedding is a container of a bunch of attribute categories and concepts.
+        It is a wrapper over the ontology used."""
     def __init__(self, attribute_agnostic):
         super().__init__()
 
@@ -125,6 +139,11 @@ class ConceptEmbedding(nn.Module):
         return {a: i for i, a in enumerate(self.all_attributes)}
 
     def init_attribute(self, identifier, input_dim, output_dim):
+        """Attribute is a category while concepts belong to one or more categories.
+            AttributeBlock is implemented as a linear layer.
+            Example:
+                identifier: 'color'.
+                input_dim, output_dim: 256, 64."""
         assert self.nr_concepts == 0, 'Can not register attributes after having registered any concepts.'
         self.attribute_operators.add_module('attribute_' + identifier, AttributeBlock(input_dim, output_dim))
         self.all_attributes.append(identifier)
@@ -132,7 +151,15 @@ class ConceptEmbedding(nn.Module):
         self.all_attributes.sort()
 
     def init_concept(self, identifier, input_dim, known_belong=None):
+        """Concept is a feature embedding with a specific identifier.
+            Each concept should belong to a corresponding attribute,
+                which is not initialized during creation, but set by 'set_belong'.
+            Example:
+                identifier: gray."""
         block = ConceptBlock(input_dim, self.nr_attributes, attribute_agnostic=self.attribute_agnostic)
+        """qian: add submodule to the outer module. 
+            The added submodule can be accessed by dot with name, 
+            as well as getattr()."""
         self.concept_embeddings.add_module('concept_' + identifier, block)
         if known_belong is not None:
             block.set_belong(self.attribute2id[known_belong])

@@ -31,7 +31,6 @@ logger = get_logger(__file__)
 
 __all__ = ['ConceptQuantizationContext', 'ProgramExecutorContext', 'DifferentiableReasoning', 'set_apply_self_mask']
 
-
 _apply_self_mask = {'relate': True, 'relate_ae': True}
 
 
@@ -58,7 +57,6 @@ _test_quantize = InferenceQuantizationMethod.STANDARD
 def set_test_quantize(mode):
     global _test_quantize
     _test_quantize = InferenceQuantizationMethod.from_string(mode)
-
 
 
 class ConceptQuantizationContext(nn.Module):
@@ -336,7 +334,10 @@ class ProgramExecutorContext(nn.Module):
 
 
 class DifferentiableReasoning(nn.Module):
-    def __init__(self, used_concepts, input_dims, hidden_dims, parameter_resolution='deterministic', vse_attribute_agnostic=False):
+    """qian: Reasoning module that executes input program at high level.
+        The detailed implementation of all program operations lie in ProgramExecutorContext."""
+    def __init__(self, used_concepts, input_dims, hidden_dims, parameter_resolution='deterministic',
+                 vse_attribute_agnostic=False):
         super().__init__()
 
         self.used_concepts = used_concepts
@@ -382,7 +383,8 @@ class DifferentiableReasoning(nn.Module):
             buffers.append(buffer)
             programs.append(prog)
 
-            ctx = ProgramExecutorContext(self.embedding_attribute, self.embedding_relation, features, parameter_resolution=self.parameter_resolution, training=self.training)
+            ctx = ProgramExecutorContext(self.embedding_attribute, self.embedding_relation, features,
+                                         parameter_resolution=self.parameter_resolution, training=self.training)
 
             for block_id, block in enumerate(prog):
                 op = block['op']
@@ -406,9 +408,11 @@ class DifferentiableReasoning(nn.Module):
                     inputs = [10 + torch.zeros(features[1].size(0), dtype=torch.float, device=features[1].device)]
                     buffer.append(ctx.filter(*inputs, block['concept_idx'], block['concept_values']))
                 elif op == 'filter_most':
-                    buffer.append(ctx.filter_most(*inputs, block['relational_concept_idx'], block['relational_concept_values']))
+                    buffer.append(
+                        ctx.filter_most(*inputs, block['relational_concept_idx'], block['relational_concept_values']))
                 elif op == 'relate':
-                    buffer.append(ctx.relate(*inputs, block['relational_concept_idx'], block['relational_concept_values']))
+                    buffer.append(
+                        ctx.relate(*inputs, block['relational_concept_idx'], block['relational_concept_values']))
                 elif op == 'relate_attribute_equal':
                     buffer.append(ctx.relate_ae(*inputs, block['attribute_idx'], block['attribute_values']))
                 elif op == 'intersect':
@@ -416,13 +420,15 @@ class DifferentiableReasoning(nn.Module):
                 elif op == 'union':
                     buffer.append(ctx.union(*inputs))
                 else:
-                    assert block_id == len(prog) - 1, 'Unexpected query operation: {}. Are you using the clevr-convension?'.format(op)
+                    assert block_id == len(
+                        prog) - 1, 'Unexpected query operation: {}. Are you using the clevr-convension?'.format(op)
                     if op == 'query':
                         buffer.append(ctx.query(*inputs, block['attribute_idx'], block['attribute_values']))
                     elif op == 'query_ls':
                         buffer.append(ctx.query_ls(*inputs, block['attribute_idx'], block['attribute_values']))
                     elif op == 'query_ls_mc':
-                        buffer.append(ctx.query_ls_mc(*inputs, block['attribute_idx'], block['attribute_values'], block['multiple_choices']))
+                        buffer.append(ctx.query_ls_mc(*inputs, block['attribute_idx'], block['attribute_values'],
+                                                      block['multiple_choices']))
                     elif op == 'query_is':
                         buffer.append(ctx.query_is(*inputs, block['concept_idx'], block['concept_values']))
                     elif op == 'query_attribute_equal':

@@ -92,7 +92,8 @@ parser.add_argument('--data-workers', type=int, default=4, metavar='N',
                     help='the num of workers that input training data')
 
 # misc
-parser.add_argument('--use-gpu', type='bool', default=False, metavar='B', help='use GPU or not')
+"""qian: must use GPU because PrRoiPooling is only implemented in CUDA."""
+parser.add_argument('--use-gpu', type='bool', default=True, metavar='B', help='use GPU or not')
 parser.add_argument('--use-tb', type='bool', default=False, metavar='B', help='use tensorboard or not')
 parser.add_argument('--embed', action='store_true', help='entering embed after initialization')
 parser.add_argument('--force-gpu', action='store_true',
