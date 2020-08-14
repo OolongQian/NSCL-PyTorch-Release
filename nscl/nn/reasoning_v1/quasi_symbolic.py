@@ -154,15 +154,38 @@ class ProgramExecutorContext(nn.Module):
         self.train(training)
 
     def filter(self, selected, group, concept_groups):
+        """Example: there are three objects in the scene, thus selected is a tensor of positive all three entries.
+            group is concept-index, and concept-groups is concept-values.
+            The output is a list of scores for the selected objects about how well they are fit for the input
+            concept-groups."""
+
+        print("enter method 'filter'...")
+        print('selected (may mean a selected subset of concepts to be filtered)', selected)
+        print('group', group)
+        print('concept_groups', concept_groups)
+
+        print("start filtering...")
+        print("filtering is essentially a process as such, "
+              "that given a set of objects, we filter them based on a set of concepts,"
+              "we would like the filtered concepts satisfy all the queried concepts (intersection)."
+              "Thus we take the min here.")
         if group is None:
             return selected
         mask = self._get_concept_groups_masks(concept_groups, 1)
         mask = torch.min(selected.unsqueeze(0), mask)
         if torch.is_tensor(group):
+            print("filtered results", (mask * group.unsqueeze(1)).sum(dim=0))
             return (mask * group.unsqueeze(1)).sum(dim=0)
+        print("filtered results", mask[group])
         return mask[group]
 
     def filter_most(self, selected, group, concept_groups):
+        print("enter method 'filter_most'...")
+        print('selected (may mean a selected subset of concepts to be filtered)', selected)
+        print('group', group)
+        print('concept_groups', concept_groups)
+
+        print("start filtering...")
         mask = self._get_concept_groups_masks(concept_groups, 2)
 
         # mask[x] = \exists y \in selected, greater(y, x)
@@ -170,14 +193,47 @@ class ProgramExecutorContext(nn.Module):
         # -mask[x] = \forall y \in selected, less_eq(y, x)
         mask = torch.min(selected, -mask)
         if torch.is_tensor(group):
+            print("filtered results", (mask * group.unsqueeze(1)).sum(dim=0))
             return (mask * group.unsqueeze(1)).sum(dim=0)
+        print("filtered results", mask[group])
         return mask[group]
 
     def relate(self, selected, group, concept_groups):
+        print("enter method 'relate'...")
+        print('selected (may mean a selected subset of concepts to be filtered)', selected)
+        print('group', group)
+        print('concept_groups', concept_groups)
+        """qian: relate is consistent with filter operation on single object concept. 
+            The second argument 2 means, 
+            here the concept_groups refer to the concept involving object pairs.
+            The input feature is also retrieved for object pairs.
+            The initial mask returned by self._get_concept_groups_masks is calculating
+            pairwise similarity for all N-by-N pair, thus the mask is of squared size.
+            The next line does weighted sum based on 'selected' probability over 'mask'.
+            Note that, the original filter single-object concept only returns linear-sized mask.
+            This is essentially because of the 
+            self.taxnomy = [None, attribute_taxnomy, relation_taxnomy] during intialization.
+            and these taxnomies are created (top-most) in DifferentialReasoning module as the following:
+             
+                for i, nr_vars in enumerate(['attribute', 'relation']): 
+                if nr_vars not in self.used_concepts:
+                    continue
+                setattr(self, 'embedding_' + nr_vars, concept_embedding.ConceptEmbedding(vse_attribute_agnostic))
+                tax = getattr(self, 'embedding_' + nr_vars)
+                rec = self.used_concepts[nr_vars]
+    
+                for a in rec['attributes']:
+                    tax.init_attribute(a, self.input_dims[1 + i], self.hidden_dims[1 + i])
+                for (v, b) in rec['concepts']:
+                    tax.init_concept(v, self.hidden_dims[1 + i], known_belong=b)"""
+
         mask = self._get_concept_groups_masks(concept_groups, 2)
+        print(mask.shapes)
         mask = (mask * selected.unsqueeze(-1).unsqueeze(0)).sum(dim=-2)
         if torch.is_tensor(group):
+            print("filtered results", (mask * group.unsqueeze(1)).sum(dim=0))
             return (mask * group.unsqueeze(1)).sum(dim=0)
+        print("filtered results", mask[group])
         return mask[group]
 
     def relate_ae(self, selected, group, attribute_groups):
@@ -237,10 +293,23 @@ class ProgramExecutorContext(nn.Module):
             return -10 + 20 * (self.count(selected1) == self.count(selected2)).float()
 
     def query(self, selected, group, attribute_groups):
+        print("enter method 'query'...")
+        print("query is a method that, given selected objects (a distribution) and a attribute concerned, "
+              "the learner returns which concepts (belonging to the attribute group) is the object "
+              "currently referring to.")
+        print('group', group)
+        print('attribute_groups', attribute_groups)
+
+        print("start filtering...")
+        """qian: this initial mask is computed only by feature, 
+            while the second line rescale the results with current 'selected'. 
+            Unselected object should not be taken too seriously, afterall."""
         mask, word2idx = self._get_attribute_query_masks(attribute_groups)
         mask = (mask * selected.unsqueeze(-1).unsqueeze(0)).sum(dim=-2)
         if torch.is_tensor(group):
+            print("queried results", (mask * group.unsqueeze(1)).sum(dim=0), word2idx)
             return (mask * group.unsqueeze(1)).sum(dim=0), word2idx
+        print("queried results", mask[group], word2idx)
         return mask[group], word2idx
 
     def query_ls(self, selected, group, attribute_groups):
@@ -494,6 +563,5 @@ class DifferentiableReasoning(nn.Module):
 
             quasi_symbolic_debug.embed(self, i, buffer, result, fd)
             print("finish processing, and exit...")
-            exit(0)
 
         return programs, buffers, result
