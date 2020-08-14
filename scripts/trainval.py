@@ -131,6 +131,7 @@ if args.use_gpu:
     assert nr_devs > 0, 'No GPU device available'
     args.gpus = [i for i in range(nr_devs)]
     args.gpu_parallel = (nr_devs > 1)
+    # args.gpu_parallel = False
 
 desc = load_source(args.desc)
 configs = desc.configs

@@ -133,6 +133,11 @@ class ConceptQuantizationContext(nn.Module):
 class ProgramExecutorContext(nn.Module):
     def __init__(self, attribute_taxnomy, relation_taxnomy, features, parameter_resolution, training=True):
         super().__init__()
+        print("Construct programExecutorContext...")
+        print("Display NSCL ontology, these are actually pretty awesome!")
+        print("attribute_taxnomy", attribute_taxnomy)
+        print("relation_taxnomy", relation_taxnomy)
+        print("feature contents are consistent with the one in reasoning module.")
 
         self.features = features
         self.parameter_resolution = ParameterResolutionMode.from_string(parameter_resolution)
@@ -336,6 +341,7 @@ class ProgramExecutorContext(nn.Module):
 class DifferentiableReasoning(nn.Module):
     """qian: Reasoning module that executes input program at high level.
         The detailed implementation of all program operations lie in ProgramExecutorContext."""
+
     def __init__(self, used_concepts, input_dims, hidden_dims, parameter_resolution='deterministic',
                  vse_attribute_agnostic=False):
         super().__init__()
@@ -357,6 +363,7 @@ class DifferentiableReasoning(nn.Module):
             for (v, b) in rec['concepts']:
                 tax.init_concept(v, self.hidden_dims[1 + i], known_belong=b)
 
+        """qian: These _ls attributes are skipped."""
         for i, nr_vars in enumerate(['attribute_ls', 'relation_ls']):
             if nr_vars not in self.used_concepts:
                 continue
@@ -377,18 +384,44 @@ class DifferentiableReasoning(nn.Module):
         programs = []
         buffers = []
         result = []
-        for i, (features, prog) in enumerate(zip(batch_features, progs)):
-            buffer = []
 
+        """qian: PyCharm remote debugger cannot handle complex shell script and python invocation, thus 
+            return to print debug..."""
+        print("insepct one DifferentiableReasoning forward pass...")
+        print("enumerate a batch of features and programs...")
+        for i, (features, prog) in enumerate(zip(batch_features, progs)):
+            print("{} batch instance".format(i), end="")
+            print("features is a length 3 list (consistent with the scene graph output): ", features[0],
+                  features[1].shape, features[2].shape)
+
+            print("program", prog)
+
+            buffer = []
             buffers.append(buffer)
             programs.append(prog)
 
+            print("create ProgramExecutorContext...")
             ctx = ProgramExecutorContext(self.embedding_attribute, self.embedding_relation, features,
                                          parameter_resolution=self.parameter_resolution, training=self.training)
 
+            """qian: A single program block execution, which essentially relates to three parts: 
+                1. program block logical control flow. 
+                2. program input data information. 
+                3. program execution context."""
+
+            print("start processing one program block.")
+            print("block is the primitive operation in the program. it is a dictionary with key", prog[0].keys())
             for block_id, block in enumerate(prog):
+                """qian: block represents one primitive operation in the program. 
+                    Currently it is just a simple linear program."""
+                print("display block content: ", end="")
+                for k, v in block.items():
+                    print(k, v, ", ", end="")
+                print()
+
                 op = block['op']
 
+                """qian: buffer is like a program stack trace, it records the previous results."""
                 if op == 'scene':
                     buffer.append(10 + torch.zeros(features[1].size(0), dtype=torch.float, device=features[1].device))
                     continue
@@ -402,6 +435,11 @@ class DifferentiableReasoning(nn.Module):
 
                 # TODO(Jiayuan Mao @ 10/06): add support of soft concept attention.
 
+                """qian: It seems that each operation op has its specific block keys, such as 'concept-idx', 
+                    'concept-values, etc.'
+                    NSCL takes out previous output in the buffer trace, 
+                    as well as the symbolic arguments in the program block, 
+                    then feed them into ProgramExecutorContext to do actual quasi-symbolic implementation."""
                 if op == 'filter':
                     buffer.append(ctx.filter(*inputs, block['concept_idx'], block['concept_values']))
                 elif op == 'filter_scene':
@@ -455,5 +493,7 @@ class DifferentiableReasoning(nn.Module):
             result.append((op, buffer[-1]))
 
             quasi_symbolic_debug.embed(self, i, buffer, result, fd)
+            print("finish processing, and exit...")
+            exit(0)
 
         return programs, buffers, result
