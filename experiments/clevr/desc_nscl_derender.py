@@ -57,6 +57,13 @@ class Model(ReasoningV1Model):
 
         programs = feed_dict.program_qsseq
         programs, buffers, answers = self.reasoning(f_sng, programs, fd=feed_dict)
+
+        print("print program and answer pairs given by the reasoning module...")
+        for prog, ans in zip(programs, answers):
+            print(prog)
+            print(ans)
+            print()
+
         outputs['buffers'] = buffers
         outputs['answer'] = answers
 
@@ -67,10 +74,13 @@ class Model(ReasoningV1Model):
         update_from_loss_module(monitors, outputs, self.qa_loss(feed_dict, answers))
 
         canonize_monitors(monitors)
+        print("check loss:", monitors.keys())
+        print("check whether self.qa_loss add supervision", self.qa_loss.add_supervision)  # qian: True.
+        print("print configs.train.scene_add_supervision", configs.train.scene_add_supervision)
 
         if self.training:
             loss = monitors['loss/qa']
-            if configs.train.scene_add_supervision:
+            if configs.train.scene_add_supervision:  # qian: no scene supervision.
                 loss = loss + monitors['loss/scene']
             return loss, monitors, outputs
         else:
